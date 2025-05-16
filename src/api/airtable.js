@@ -81,16 +81,17 @@ export async function fetchProjectsByIds(ids = []) {
 export async function fetchUpdatesByIds(ids = []) {
   if (!ids || ids.length === 0) return [];
   return await Promise.all(ids.map(fetchUpdateById));
-
 }
 
 // --- ACCOUNT CREATION ---
 export async function createAccount(fields) {
   return await createRecord("Accounts", fields);
 }
+
 export async function updateUser(userId, fields) {
   return await updateRecord("Users", userId, fields);
 }
+
 // --- PROJECT CREATION ---
 export async function createProject(fields) {
   return await createRecord("Projects", fields);
@@ -141,13 +142,95 @@ export async function deleteRecord(table, id) {
   }
 }
 
-// === FETCH UPDATES FOR A PROJECT (Airtable API) ===
+// Function to normalize date format for consistent comparison
+export function formatDateForAirtable(dateInput) {
+  if (!dateInput) return "";
+  const date = dateInput instanceof Date ? dateInput : new Date(dateInput);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 
-export async function fetchProjectUpdates(projectId) {
+/**
+ * Fetch all updates from the Updates table without any filtering
+ * This allows client-side filtering by project and date
+ */
+export async function fetchAllUpdates() {
   try {
-    const formula = encodeURIComponent(`{Project} = "${projectId}"`);
-    const data = await apiRequest("Updates", `?filterByFormula=${formula}`);
+    console.log("[fetchAllUpdates] Fetching all updates from Airtable");
+    
+    const data = await apiRequest("Updates");
+    
+    console.log(`[fetchAllUpdates] Found ${data.records.length} total updates`);
     return data.records;
+  } catch (err) {
+    console.error("[fetchAllUpdates] Failed:", err);
+    return [];
+  }
+}
+
+/**
+ * Process updates for projects (client-side filtering)
+ * Returns a map of project IDs to arrays of their updates
+ */
+export function processUpdatesByProject(allUpdates, projectIds = []) {
+  if (!projectIds || projectIds.length === 0) {
+    console.log("[processUpdatesByProject] No project IDs provided");
+    return {};
+  }
+  
+  console.log(`[processUpdatesByProject] Processing updates for ${projectIds.length} projects`);
+  
+  // Create a result object to store updates by project ID
+  const updatesByProjectId = {};
+  
+  // Initialize each project with an empty array
+  projectIds.forEach(pid => {
+    updatesByProjectId[pid] = [];
+  });
+  
+  // Process all updates and organize them by project
+  allUpdates.forEach(update => {
+    const updateProjects = update.fields.Project || [];
+    
+    updateProjects.forEach(projectId => {
+      if (projectIds.includes(projectId)) {
+        updatesByProjectId[projectId].push(update);
+      }
+    });
+  });
+  
+  return updatesByProjectId;
+}
+
+// === FETCH UPDATES FOR A PROJECT AND DATE ===
+// Keeping for backwards compatibility, now it uses the simplified approach
+export async function fetchProjectUpdates(projectId, selectedDate = null) {
+  try {
+    // Get all updates from Airtable
+    const allUpdates = await fetchAllUpdates();
+    
+    // Filter updates for the specified project
+    const projectUpdates = allUpdates.filter(update => {
+      const updateProjects = update.fields.Project || [];
+      return updateProjects.includes(projectId);
+    });
+    
+    // If no date provided, return all updates for the project
+    if (!selectedDate) {
+      return projectUpdates;
+    }
+    
+    // Otherwise, filter the updates by date
+    const formattedDate = formatDateForAirtable(selectedDate);
+    const filteredUpdates = projectUpdates.filter(update => 
+      update.fields.Date === formattedDate
+    );
+    
+    console.log(`[fetchProjectUpdates] Filtered to ${filteredUpdates.length} updates for project ${projectId} on date ${formattedDate}`);
+    
+    return filteredUpdates;
   } catch (err) {
     console.error("[fetchProjectUpdates] Failed:", err);
     throw err;

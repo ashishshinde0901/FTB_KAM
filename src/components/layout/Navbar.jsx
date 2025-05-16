@@ -1,5 +1,4 @@
-// src/components/layout/Navbar.jsx
-import React, { useState, useRef, useEffect } from "react";
+import React from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { UserCircleIcon, PlusIcon } from "@heroicons/react/24/outline";
 
@@ -8,11 +7,11 @@ export default function Navbar() {
   const location = useLocation();
   const isLoginPage = location.pathname === "/login";
   const userName = localStorage.getItem("userName") || "User";
-  const [showMenu, setShowMenu] = useState(false);
-  const menuRef = useRef();
+  const [showMenu, setShowMenu] = React.useState(false);
+  const menuRef = React.useRef();
 
   // Close menu on outside click
-  useEffect(() => {
+  React.useEffect(() => {
     function handleClick(e) {
       if (menuRef.current && !menuRef.current.contains(e.target)) setShowMenu(false);
     }

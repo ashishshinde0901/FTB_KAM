@@ -65,12 +65,11 @@ export default function Updates() {
           const projectId = record.fields.Project && record.fields.Project[0];
           const projectName = projectIdToName[projectId] || projectId || "N/A";
           return (
-            <Link
-              to={`/updates/${record.id}`}
+            <div 
               key={record.id}
               className="block bg-white p-5 sm:p-6 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-150"
-              style={{ textDecoration: "none", color: "inherit" }}
             >
+              {/* Update content (not wrapped in Link) */}
               <div className="font-semibold text-gray-800">
                 Date: <span className="font-normal text-gray-600">{record.fields.Date ? new Date(record.fields.Date).toLocaleDateString() : "N/A"}</span>
               </div>
@@ -84,7 +83,6 @@ export default function Updates() {
                   <Link
                     to={`/projects/${projectId}`}
                     className="font-medium text-primary hover:underline"
-                    onClick={e => e.stopPropagation()} // Prevents navigating to update detail when clicking project name
                   >
                     {projectName}
                   </Link>
@@ -92,7 +90,17 @@ export default function Updates() {
                   <span className="italic">N/A</span>
                 )}
               </div>
-            </Link>
+              
+              {/* View update details link - separated from content */}
+              <div className="mt-4 text-right">
+                <Link
+                  to={`/updates/${record.id}`}
+                  className="inline-block px-4 py-2 bg-blue-50 text-primary rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors"
+                >
+                  View Details
+                </Link>
+              </div>
+            </div>
           );
         })}
       </div>
