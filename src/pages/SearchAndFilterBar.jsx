@@ -44,7 +44,7 @@ export default function SearchAndFilterBar({
                   <Listbox.Option value="">
                     {({ selected }) => (
                       <span className={classNames(selected ? "font-medium text-blue-700" : "font-normal", "block truncate px-4 py-2")}>
-                        All Account Types
+                        Account Types
                       </span>
                     )}
                   </Listbox.Option>
